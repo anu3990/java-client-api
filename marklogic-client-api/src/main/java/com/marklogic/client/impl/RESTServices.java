@@ -116,10 +116,10 @@ public interface RESTServices {
   String MIN_RETRY_PROP = "com.marklogic.client.minimumRetries";
 
   @Deprecated
-  public void connect(String host, int port, String database, String user, String password, Authentication type,
-                      SSLContext context, SSLHostnameVerifier verifier);
-  public void connect(String host, int port, String database, String user, String password, Authentication type,
-      SSLContext context, X509TrustManager trustManager, SSLHostnameVerifier verifier);
+  public void connect(String host, int port, String database, String user, String password, Map<String,String> kerberosOptions,
+                      Authentication type, SSLContext context, SSLHostnameVerifier verifier);
+  public void connect(String host, int port, String database, String user, String password, Map<String,String> kerberosOptions,
+                      Authentication type, SSLContext context, X509TrustManager trustManager, SSLHostnameVerifier verifier);
   public DatabaseClient getDatabaseClient();
   public void setDatabaseClient(DatabaseClient client);
   public void release();
@@ -197,9 +197,6 @@ public interface RESTServices {
 
   // namespaces, etc.
   public <T> T getValue(RequestLogger logger, String type, String key,
-                        boolean isNullable, String mimetype, Class<T> as)
-    throws ResourceNotFoundException, ForbiddenUserException, FailedRequestException;
-  public <T> T getValue(RequestLogger logger, String type, String key, Transaction transaction,
                         boolean isNullable, String mimetype, Class<T> as)
     throws ResourceNotFoundException, ForbiddenUserException, FailedRequestException;
   public <T> T getValues(RequestLogger logger, String type, String mimetype, Class<T> as)
