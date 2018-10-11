@@ -54,6 +54,7 @@ import com.marklogic.client.io.marker.ContentHandleFactory;
  */
 public class DatabaseClientFactory {
 
+  static final private Logger logger = LoggerFactory.getLogger(DatabaseClientFactory.class);
   static private ClientConfigurator<?> clientConfigurator;
   static private HandleFactoryRegistry handleRegistry =
     HandleFactoryRegistryImpl.newDefault();
