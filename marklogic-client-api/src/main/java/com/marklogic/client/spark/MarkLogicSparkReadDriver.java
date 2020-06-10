@@ -51,9 +51,9 @@ public class MarkLogicSparkReadDriver {
         DataFrameReader reader = sparkSession.read()
                 .format(MarkLogicReadDataSource.class.getName())
                 .option("host", "localhost")
-                .option("port", 8012)
-                .option("user", "admin")
-                .option("password","admin")
+                .option("port", port-number)
+                .option("user", "username")
+                .option("password","password")
                 .option("batchsize", 10);
 
         StructType struct = new StructType()
