@@ -39,7 +39,7 @@ public class MarkLogicSparkWriteDriver {
 
         Dataset<Row> dataset = sparkSession.read().option("header", true)
                 .format("csv")
-                .csv("/Users/asinha/intellij/intellij-develop/code/marklogic-client-api/src/main/java/com/marklogic/client/spark/resources/data/data.csv"); // Absolute path to data.csv
+                .csv("../spark/resources/data/data.csv"); // Absolute path to data.csv
         StringBuffer headers = new StringBuffer();
         for(int i=0; i<dataset.schema().fields().length; i++) {
             headers.append(dataset.schema().fields()[i].name());
@@ -47,10 +47,10 @@ public class MarkLogicSparkWriteDriver {
         }
         try {
             DataFrameWriter writer = dataset.repartition(numberOfPartitions).write().format(MarkLogicWriteDataSource.class.getName())
-                    .option("host", "10.0.0.2")
-                    .option("port", 8012)
-                    .option("user", "admin")
-                    .option("password","admin")
+                    .option("host", "localhost")
+                    .option("port", port-number)
+                    .option("user", "username")
+                    .option("password","password")
                     .option("batchsize", 10)
                     .option("schema", headers.toString());
             writer.save();
