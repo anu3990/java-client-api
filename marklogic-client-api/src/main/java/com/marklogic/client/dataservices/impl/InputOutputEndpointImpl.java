@@ -19,6 +19,7 @@ import com.marklogic.client.DatabaseClient;
 import com.marklogic.client.SessionState;
 import com.marklogic.client.dataservices.InputOutputEndpoint;
 import com.marklogic.client.io.marker.JSONWriteHandle;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,7 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class InputOutputEndpointImpl extends IOEndpointImpl implements InputOutputEndpoint {
     private static Logger logger = LoggerFactory.getLogger(InputOutputEndpointImpl.class);
@@ -118,7 +120,12 @@ public class InputOutputEndpointImpl extends IOEndpointImpl implements InputOutp
         InputStream[] values = getCaller().arrayCall(getClient(), callContext.getEndpointState(),
                 callContext.getSessionState(), callContext.getWorkUnit(), input);
         ByteArrayOutputStream endpointState = new ByteArrayOutputStream();
-        values[0].transferTo(endpointState);
+        int bufLen = 1024;
+        byte[] buf = new byte[bufLen];
+        int readLen;
+        while (( readLen = values[0].read(buf, 0, bufLen)) != -1)
+            endpointState.write(buf, 0, readLen);
+        //values[0].transferTo(endpointState);
         callContext.withEndpointState(values[0]);
 
         if(withEndpointState) {

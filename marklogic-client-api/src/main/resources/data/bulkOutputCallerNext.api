@@ -1,0 +1,19 @@
+{
+  "endpoint": "/bulkOutputCallerNext.sjs",
+  "params": [ {
+    "name":     "endpointState",
+    "datatype": "jsonDocument",
+    "multiple": false,
+    "nullable": true
+    }, {
+    "name":     "workUnit",
+    "datatype": "jsonDocument",
+    "multiple": false,
+    "nullable": true
+    } ],
+  "return": {
+    "datatype": "jsonDocument",
+    "multiple": true,
+    "nullable": true
+  }
+}
