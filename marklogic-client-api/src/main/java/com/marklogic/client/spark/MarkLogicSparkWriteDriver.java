@@ -34,12 +34,11 @@ public class MarkLogicSparkWriteDriver {
         taskIds = new ArrayList<>();
 
         SparkSession sparkSession = SparkSession.builder()
-                .master("local")
                 .getOrCreate();
 
         Dataset<Row> dataset = sparkSession.read().option("header", true)
                 .format("csv")
-                .csv("/Users/asinha/intellij/june-25/java-client-api/marklogic-client-api/src/main/resources/data/data.csv"); // Absolute path to data.csv
+                .csv("s3-path"); // Absolute path to data.csv
         StringBuffer headers = new StringBuffer();
         for(int i=0; i<dataset.schema().fields().length; i++) {
             headers.append(dataset.schema().fields()[i].name());
