@@ -347,7 +347,7 @@ public class RowBatcherTest {
                             JsonNode docNode = row.get("doc");
                             // System.out.println(docNode);
                             if (actual.contains(docNode)) {
-                                System.out.println("already found doc="+docNode.toPrettyString());
+                                //System.out.println("already found doc="+docNode.toPrettyString());
                                 failed.set(true);
                                 return;
                             } else {
