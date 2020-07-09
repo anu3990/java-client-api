@@ -28,26 +28,28 @@ public class MarkLogicSparkWriteDriver {
     // Adding below variables for easy cleanup.
     static int numberOfPartitions = 4;
     static Long recordCount;
-    public static List<Long> taskIds;
+    public List<Long> taskIds;
 
-    public static void main(String args[]) {
-        taskIds = new ArrayList<>();
+    public void mlSparkDriver(String csvPath, String ip) {
+        // taskIds = new ArrayList<>();
 
         SparkSession sparkSession = SparkSession.builder()
                 .getOrCreate();
 
         Dataset<Row> dataset = sparkSession.read().option("header", true)
                 .format("csv")
-                .csv("s3-path"); // Absolute path to data.csv
+                .csv(String.valueOf(csvPath)); // Absolute path to data.csv
         StringBuffer headers = new StringBuffer();
         for(int i=0; i<dataset.schema().fields().length; i++) {
             headers.append(dataset.schema().fields()[i].name());
             headers.append(",");
         }
-        System.out.println("************ Starting MarkLogicSparkWriteDriver ****************");
+        System.out.println("************ Starting MarkLogicSparkWriteDriver **************** ");
+        System.out.println("************ CSV path **************** "+ csvPath);
+        System.out.println("************ IP **************** "+ ip);
         try {
             DataFrameWriter writer = dataset.write().format(MarkLogicWriteDataSource.class.getName())
-                    .option("host", "ip-address")
+                    .option("host", String.valueOf(ip))
                     .option("port", 8012)
                     .option("user", "admin")
                     .option("password","admin")
@@ -58,10 +60,10 @@ public class MarkLogicSparkWriteDriver {
         } catch(Exception e) {
             e.printStackTrace();
         }
-        recordCount = dataset.count();
-       // cleanup();
+        //recordCount = dataset.count();
+        // cleanup();
     }
-    public static void cleanup() {
+    public void cleanup() {
         JSONDocumentManager docMgr = IOTestUtil.db.newJSONDocumentManager();
         System.out.println("**************** Cleaning Up ********************");
         for(Long j:taskIds) {

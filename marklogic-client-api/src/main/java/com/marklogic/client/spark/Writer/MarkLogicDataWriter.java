@@ -39,15 +39,15 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 public class MarkLogicDataWriter implements DataWriter<InternalRow> {
-    static String scriptPath;
-    static String apiPath;
-    static ObjectNode apiObj;
+    String scriptPath;
+    String apiPath;
+    ObjectNode apiObj;
     private Map<String, String> map;
     private List<String> records;
     InputEndpoint.BulkInputCaller loader;
     String[] headers;
     private int taskId = 1;
-    static final private Logger logger = LoggerFactory.getLogger(MarkLogicDataWriter.class);
+    final private Logger logger = LoggerFactory.getLogger(MarkLogicDataWriter.class);
 
     public MarkLogicDataWriter(Map<String, String> map) {
         System.out.println("************ Reached MarkLogicDataWriter ****************");
@@ -60,13 +60,14 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
             //headers = map.get("schema").split(",");
 
             String apiName = "bulkInputCallerImpl.api";
-            apiObj = IOTestUtil.readApi(apiName);
-            scriptPath = IOTestUtil.getScriptPath(apiObj);
-            apiPath = IOTestUtil.getApiPath(scriptPath);
-            IOTestUtil.load(apiName, apiObj, scriptPath, apiPath);
+            IOTestUtil ioTestUtil = new IOTestUtil(map.get("host"));
+            apiObj = ioTestUtil.readApi(apiName);
+            scriptPath = ioTestUtil.getScriptPath(apiObj);
+            apiPath = ioTestUtil.getApiPath(scriptPath);
+            ioTestUtil.load(apiName, apiObj, scriptPath, apiPath);
 
             String endpointState = "{\"next\":" + 0 + "}";
-            InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, new JacksonHandle(apiObj));
+            InputEndpoint loadEndpt = InputEndpoint.on(ioTestUtil.db, new JacksonHandle(apiObj));
 
             this.loader = loadEndpt.bulkCaller();
             String workUnit = "{\"taskId\":" + taskId + "}";

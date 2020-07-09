@@ -34,13 +34,22 @@ import java.io.InputStream;
 public class IOTestUtil {
     public final static String TEST_DIR = "data";
 
-    public final static DatabaseClient db         = Common.newServerAdminClient();
-    public final static DatabaseClient modDb      = Common.newEvalClient("java-unittest-modules");
-    public final static DocumentMetadataHandle scriptMeta = initDocumentMetadata(true);
-    public final static DocumentMetadataHandle docMeta    = initDocumentMetadata(false);
-    public final static TextDocumentManager modMgr     = modDb.newTextDocumentManager();
+    public static DatabaseClient db ;
+    public static DatabaseClient modDb;
+    public static DocumentMetadataHandle scriptMeta;
+    public static DocumentMetadataHandle docMeta ;
+    public static TextDocumentManager modMgr;
 
     public final static ObjectMapper mapper = new ObjectMapper();
+
+    public IOTestUtil(String hostip) {
+        Common common = new Common(hostip);
+        db         = common.newServerAdminClient();
+        modDb      = common.newEvalClient("java-unittest-modules");
+        scriptMeta = initDocumentMetadata(true);
+        docMeta    = initDocumentMetadata(false);
+        modMgr     = modDb.newTextDocumentManager();
+    }
 
     public static DocumentMetadataHandle initDocumentMetadata(boolean isScript) {
         DocumentMetadataHandle docMeta = new DocumentMetadataHandle();
@@ -77,7 +86,6 @@ public class IOTestUtil {
     public static void load(String apiName, ObjectNode apiObj, String scriptPath, String apiPath) throws IOException {
         String scriptName = scriptPath.substring(scriptPath.length() - apiName.length());
         String scriptBody = Common.testFileToString(TEST_DIR+File.separator+scriptName);
-
         DocumentWriteSet writeSet = modMgr.newWriteSet();
         writeSet.add(apiPath,    docMeta,    new JacksonHandle(apiObj));
         writeSet.add(scriptPath, scriptMeta, new StringHandle(scriptBody));

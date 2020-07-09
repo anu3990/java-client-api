@@ -45,7 +45,7 @@ public class Common {
   final public static String READ_ONLY_USER= "rest-reader";
   final public static String READ_ONLY_PASS= "x";
 
-  final public static String  HOST          = System.getProperty("TEST_HOST", "ip-address");
+  public static String  HOST;
 
   final public static int     PORT          = Integer.parseInt(System.getProperty("TEST_PORT", "8012"));
   final public static boolean WITH_WAIT     = Boolean.parseBoolean(System.getProperty("TEST_WAIT", "false"));
@@ -53,9 +53,13 @@ public class Common {
   final public static int     PROPERTY_WAIT = Integer.parseInt(System.getProperty("TEST_PROPERTY_WAIT", WITH_WAIT ? "8200" : "0"));
 
   final public static DatabaseClient.ConnectionType CONNECTION_TYPE =
-      DatabaseClient.ConnectionType.valueOf(System.getProperty("TEST_CONNECT_TYPE", "DIRECT"));
+          DatabaseClient.ConnectionType.valueOf(System.getProperty("TEST_CONNECT_TYPE", "DIRECT"));
 
   final public static boolean BALANCED = Boolean.parseBoolean(System.getProperty("TEST_BALANCED", "false"));
+
+  public Common(String hostip) {
+    HOST = hostip;
+  }
 
   public static DatabaseClient client;
   public static DatabaseClient adminClient;
@@ -93,37 +97,37 @@ public class Common {
   }
   public static DatabaseClient newClient(String databaseName) {
     return DatabaseClientFactory.newClient(Common.HOST, Common.PORT, databaseName,
-        new DigestAuthContext(Common.USER, Common.PASS),
-          CONNECTION_TYPE);
+            new DigestAuthContext(Common.USER, Common.PASS),
+            CONNECTION_TYPE);
   }
   public static DatabaseClient newAdminClient() {
     return newAdminClient(null);
   }
   public static DatabaseClient newAdminClient(String databaseName) {
     return DatabaseClientFactory.newClient(Common.HOST, Common.PORT, databaseName,
-       new DigestAuthContext(Common.REST_ADMIN_USER, Common.REST_ADMIN_PASS),
-          CONNECTION_TYPE);
+            new DigestAuthContext(Common.REST_ADMIN_USER, Common.REST_ADMIN_PASS),
+            CONNECTION_TYPE);
   }
   public static DatabaseClient newServerAdminClient() {
     return newServerAdminClient(null);
   }
   public static DatabaseClient newServerAdminClient(String databaseName) {
     return DatabaseClientFactory.newClient(Common.HOST, Common.PORT, databaseName,
-       new DigestAuthContext(Common.SERVER_ADMIN_USER, Common.SERVER_ADMIN_PASS),
-          CONNECTION_TYPE);
+            new DigestAuthContext(Common.SERVER_ADMIN_USER, Common.SERVER_ADMIN_PASS),
+            CONNECTION_TYPE);
   }
   public static DatabaseClient newEvalClient() {
     return newEvalClient(null);
   }
   public static DatabaseClient newEvalClient(String databaseName) {
     return DatabaseClientFactory.newClient(
-      Common.HOST, Common.PORT, databaseName, new DigestAuthContext(Common.EVAL_USER, Common.EVAL_PASS),
-          CONNECTION_TYPE);
+            Common.HOST, Common.PORT, databaseName, new DigestAuthContext(Common.EVAL_USER, Common.EVAL_PASS),
+            CONNECTION_TYPE);
   }
   public static DatabaseClient newReadOnlyClient() {
     return DatabaseClientFactory.newClient(
-      Common.HOST, Common.PORT, new DigestAuthContext(Common.READ_ONLY_USER, Common.READ_ONLY_PASS),
-          CONNECTION_TYPE);
+            Common.HOST, Common.PORT, new DigestAuthContext(Common.READ_ONLY_USER, Common.READ_ONLY_PASS),
+            CONNECTION_TYPE);
   }
 
   public static byte[] streamToBytes(InputStream is) throws IOException {
@@ -158,13 +162,13 @@ public class Common {
     return testFileToReader(filename, null);
   }
   public static URI getResourceUri(String filename) throws URISyntaxException {
-      return Common.class.getClassLoader().getResource(filename).toURI();
+    return Common.class.getClassLoader().getResource(filename).toURI();
   }
   public static Reader testFileToReader(String filename, String encoding) {
     try {
       return (encoding != null) ?
-             new InputStreamReader(testFileToStream(filename), encoding) :
-             new InputStreamReader(testFileToStream(filename));
+              new InputStreamReader(testFileToStream(filename), encoding) :
+              new InputStreamReader(testFileToStream(filename));
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e);
     }
@@ -179,9 +183,9 @@ public class Common {
   public static String testDocumentToString(Document document) {
     try {
       return ((DOMImplementationLS) DocumentBuilderFactory
-        .newInstance()
-        .newDocumentBuilder()
-        .getDOMImplementation()
+              .newInstance()
+              .newDocumentBuilder()
+              .getDOMImplementation()
       ).createLSSerializer().writeToString(document);
     } catch (DOMException e) {
       throw new RuntimeException(e);
@@ -197,7 +201,7 @@ public class Common {
       factory.setNamespaceAware(true);
       factory.setValidating(false);
       return factory.newDocumentBuilder().parse(
-        new InputSource(new StringReader(document)));
+              new InputSource(new StringReader(document)));
     } catch (SAXException e) {
       throw new RuntimeException(e);
     } catch (IOException e) {
