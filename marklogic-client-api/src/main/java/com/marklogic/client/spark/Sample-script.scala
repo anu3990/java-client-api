@@ -14,17 +14,16 @@ import scala.collection.JavaConverters._
 object GlueApp {
   def main(args: Array[String]) {
 
-    val spark = SparkSession
-      .builder()
-      .appName("Test")
-      .getOrCreate()
+val spark: SparkContext = new SparkContext()
+    val glueContext: GlueContext = new GlueContext(spark)
+    val sparkSession: SparkSession = glueContext.getSparkSession
 
-    val inputPath = “input-file-path”
-    val ip = “ip-address-of-instance-where-marklogic-is-installed”
-    
+
+    val inputPath = "s3-input-path-of-docs-1-to-100.csv"
+    val ip = "ipv4 address of the instance"
+
     val javaApi = new MarkLogicSparkWriteDriver()
     val t1 = javaApi.mlSparkDriver(inputPath, ip)
 
-    spark.stop()
   }
 }
