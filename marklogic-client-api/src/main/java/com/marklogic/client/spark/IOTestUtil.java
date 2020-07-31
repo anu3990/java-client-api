@@ -39,6 +39,7 @@ public class IOTestUtil {
     public static DocumentMetadataHandle scriptMeta;
     public static DocumentMetadataHandle docMeta ;
     public static TextDocumentManager modMgr;
+    public DatabaseClient db1;
 
     public final static ObjectMapper mapper = new ObjectMapper();
 
@@ -49,6 +50,11 @@ public class IOTestUtil {
         scriptMeta = initDocumentMetadata(true);
         docMeta    = initDocumentMetadata(false);
         modMgr     = modDb.newTextDocumentManager();
+        this.db1         = common.newServerAdminClient();
+    }
+    public DatabaseClient getDb1() {
+
+        return this.db1;
     }
 
     public static DocumentMetadataHandle initDocumentMetadata(boolean isScript) {

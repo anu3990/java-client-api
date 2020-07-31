@@ -19,17 +19,20 @@ import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriterFactory;
 import org.apache.spark.sql.sources.v2.writer.WriterCommitMessage;
+import org.apache.spark.sql.types.StructType;
 
 import java.util.Map;
 
 public class MarkLogicWriter implements DataSourceWriter {
     private Map<String, String> map;
-    public MarkLogicWriter(Map<String, String> map) {
+    private StructType schema;
+    public MarkLogicWriter(Map<String, String> map, StructType schema) {
         this.map = map;
+        this.schema = schema;
     }
     @Override
     public DataWriterFactory<InternalRow> createWriterFactory() {
-        return new MarkLogicDataWriterFactory(map);
+        return new MarkLogicDataWriterFactory(map, this.schema);
     }
 
     @Override

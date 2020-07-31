@@ -16,17 +16,14 @@
 package com.marklogic.client.spark.Writer;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.marklogic.client.DatabaseClient;
-import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.dataservices.InputEndpoint;
-import com.marklogic.client.document.JSONDocumentManager;
 import com.marklogic.client.io.JacksonHandle;
-import com.marklogic.client.io.StringHandle;
-import com.marklogic.client.spark.Common;
 import com.marklogic.client.spark.IOTestUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.v2.writer.DataWriter;
 import org.apache.spark.sql.sources.v2.writer.WriterCommitMessage;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,27 +42,25 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
     private Map<String, String> map;
     private List<String> records;
     InputEndpoint.BulkInputCaller loader;
-    String[] headers;
     private int taskId = 1;
+    private StructType schema;
     final private Logger logger = LoggerFactory.getLogger(MarkLogicDataWriter.class);
 
-    public MarkLogicDataWriter(Map<String, String> map) {
+    public MarkLogicDataWriter(Map<String, String> map, StructType schema) {
         System.out.println("************ Reached MarkLogicDataWriter ****************");
-        logger.info("************ Reached MarkLogicDataWriter ****************");
+        logger.info("************ Reached MarkLogicDataWriter ****************"+schema);
+
         try {
             this.map = map;
             this.records = new ArrayList<>();
             this.taskId = Integer.valueOf(map.get("taskId"));
-            //this.taskId+=1;
-            //headers = map.get("schema").split(",");
-
+            this.schema = schema;
             String apiName = "bulkInputCallerImpl.api";
             IOTestUtil ioTestUtil = new IOTestUtil(map.get("host"));
             apiObj = ioTestUtil.readApi(apiName);
             scriptPath = ioTestUtil.getScriptPath(apiObj);
             apiPath = ioTestUtil.getApiPath(scriptPath);
             ioTestUtil.load(apiName, apiObj, scriptPath, apiPath);
-
             String endpointState = "{\"next\":" + 0 + "}";
             InputEndpoint loadEndpt = InputEndpoint.on(ioTestUtil.db, new JacksonHandle(apiObj));
 
@@ -80,12 +75,19 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
 
     @Override
     public void write(InternalRow record) throws IOException {
-        System.out.println("************ Reached MarkLogicDataWriter.write ****************");
-        logger.info("************ Reached MarkLogicDataWriter.write ****************");
-        String[] headers = new String[2];
-        headers[0] = "docNum";
-        headers[1] = "docName";
-        records.add("{\""+headers[0]+"\":"+record.getString(0)+", \""+headers[1]+"\":"+"\""+record.getString(1)+"\""+"}");
+        System.out.println("************ Reached MarkLogicDataWriter.write **************** ");
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append("{");
+        for(int i=0;i<schema.fields().length; i++) {
+            stringBuffer.append(prepareData(record, schema.fields()[i], i));
+            if(i!=schema.fields().length-1)
+                stringBuffer.append(", ");
+        }
+
+        stringBuffer.append("}");
+        records.add(stringBuffer.toString());
+        System.out.println(records);
+        System.out.println("**** Number of fields in internal row **** "+record.numFields());
 
         if(records.size() == Integer.valueOf(map.get("batchsize"))) {
             writeRecords();
@@ -108,22 +110,41 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
 
     private void writeRecords() {
         System.out.println("************ Reached MarkLogicDataWriter.writeRecords ****************");
-        System.out.println("*********** Batch size "+ records.size());
-        logger.info("************ Reached MarkLogicDataWriter.writeRecords ****************");
 
         Stream.Builder<InputStream> builder = Stream.builder();
 
         for(int i=0; i< records.size(); i++){
-            System.out.println(records.get(i));
+            System.out.println(records.get(i) + "***** with size **** "+ records.size());
             builder.add(IOTestUtil.asInputStream(records.get(i)));
         }
         Stream<InputStream> input = builder.build();
-        System.out.println("*********** input value ********* "+input);
         input.forEach(loader::accept);
         loader.awaitCompletion();
         taskId+= records.size();
         this.records.clear();
         System.out.println("*********** After writing data ");
 
+    }
+
+    private String prepareData(InternalRow record, StructField structField, int fieldNumber) {
+        StringBuffer stringBuffer = new StringBuffer();
+
+        stringBuffer.append("\""+structField.name()+ "\":");
+        if(structField.dataType().toString().contains("StructType")) {
+            stringBuffer.append("{");
+            StructType sc1 = (StructType) (structField.dataType());
+            for(int k=0;k<sc1.fields().length; k++) {
+                stringBuffer.append(prepareData(record.getStruct(fieldNumber, sc1.fields().length), sc1.fields()[k], k));
+                if(k!=sc1.fields().length-1)
+                    stringBuffer.append(", ");
+            }
+            stringBuffer.append("}");
+        }
+        else if(structField.dataType().toString().equals("StringType"))
+            stringBuffer.append("\""+ record.get(fieldNumber, structField.dataType()) + "\"");
+        else
+            stringBuffer.append(record.get(fieldNumber, structField.dataType()));
+
+        return stringBuffer.toString();
     }
 }
