@@ -44,7 +44,7 @@ public class MarkLogicSparkWriteDriver {
 
         System.out.println("************ Starting MarkLogicSparkWriteDriver **************** ");
         try {
-            DataFrameWriter writer = dataset.write().mode("overwrite").format(MarkLogicWriteDataSource.class.getName())
+            DataFrameWriter writer = dataset.write().format(MarkLogicWriteDataSource.class.getName())
                     .option("host", String.valueOf(ip))
                     .option("port", 8012)
                     .option("user", "admin")

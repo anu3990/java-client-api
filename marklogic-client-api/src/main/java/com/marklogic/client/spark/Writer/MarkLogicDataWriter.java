@@ -27,9 +27,7 @@ import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -140,11 +138,24 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
             }
             stringBuffer.append("}");
         }
-        else if(structField.dataType().toString().equals("StringType"))
-            stringBuffer.append("\""+ record.get(fieldNumber, structField.dataType()) + "\"");
-        else
-            stringBuffer.append(record.get(fieldNumber, structField.dataType()));
+        else {
+            String dataType = structField.dataType().toString();
 
+            switch (dataType) {
+                case "BinaryType":
+                case "LongType":
+                case "DoubleType":
+                case "FloatType":
+                case "IntegerType":
+                    stringBuffer.append(record.get(fieldNumber, structField.dataType()));
+                    break;
+                case "BooleanType":
+                    stringBuffer.append(record.getBoolean(fieldNumber));
+                    break;
+                default:
+                    stringBuffer.append("\"" + record.get(fieldNumber, structField.dataType()) + "\"");
+            }
+        }
         return stringBuffer.toString();
     }
 }
