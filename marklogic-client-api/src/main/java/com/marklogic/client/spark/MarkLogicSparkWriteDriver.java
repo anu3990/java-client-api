@@ -37,12 +37,12 @@ public class MarkLogicSparkWriteDriver {
                 .format("json")
                 .json("/Users/asinha/intellij/july-8/java-client-api/marklogic-client-api/src/main/java/com/marklogic/client/spark/data/test.json");
                 //.csv("/Users/asinha/intellij/july-8/java-client-api/marklogic-client-api/src/main/java/com/marklogic/client/spark/data/data.csv");
-        ml.mlSparkDriver(dataset1, "");
+        ml.mlSparkDriver(dataset1, "localhost");
     }
 
     public void mlSparkDriver(Dataset dataset, String ip) {
 
-        System.out.println("************ Starting MarkLogicSparkWriteDriver **************** ");
+        System.out.println("************ Starting MarkLogicSparkWriteDriver **************** "+dataset.schema());
         try {
             DataFrameWriter writer = dataset.write().format(MarkLogicWriteDataSource.class.getName())
                     .option("host", String.valueOf(ip))
