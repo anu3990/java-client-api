@@ -1,0 +1,2 @@
+1. In case you get - " java.lang.NoSuchMethodError: okio.BufferedSource.readUtf8LineStrict(J)Ljava/lang/String;" exception.
+    Try replacing okio-1.4.0.jar under - /usr/lib/spark/jars with okio-1.15.0.jar
