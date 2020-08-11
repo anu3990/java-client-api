@@ -57,14 +57,14 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
             this.taskId = Integer.valueOf(map.get("taskId"));
             this.schema = schema;
             String apiName = "bulkInputCallerImpl.api";
-            IOTestUtil ioTestUtil = new IOTestUtil(map.get("host"));
+            IOTestUtil ioTestUtil = new IOTestUtil(map.get("host"), Integer.valueOf(map.get("port")), map.get("user"),
+                    map.get("password"), map.get("moduledatabase"));
             apiObj = ioTestUtil.readApi(apiName);
             scriptPath = ioTestUtil.getScriptPath(apiObj);
             apiPath = ioTestUtil.getApiPath(scriptPath);
             ioTestUtil.load(apiName, apiObj, scriptPath, apiPath);
-            String endpointState = "{\"next\":" + 0 + "}";
-            InputEndpoint loadEndpt = InputEndpoint.on(ioTestUtil.db, new JacksonHandle(apiObj));
-
+            String endpointState = "{\"next\":" + 0 + ", \"prefix\":\""+map.get("prefixvalue")+"\"}";
+            InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, new JacksonHandle(apiObj));
             this.loader = loadEndpt.bulkCaller();
             String workUnit = "{\"taskId\":" + taskId + "}";
             loader.setWorkUnit(new ByteArrayInputStream(workUnit.getBytes()));

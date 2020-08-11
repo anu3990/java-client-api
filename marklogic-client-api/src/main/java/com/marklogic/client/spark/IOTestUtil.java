@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.marklogic.client.DatabaseClient;
+import com.marklogic.client.DatabaseClientFactory;
 import com.marklogic.client.document.DocumentWriteSet;
 import com.marklogic.client.document.JSONDocumentManager;
 import com.marklogic.client.document.TextDocumentManager;
@@ -26,10 +27,13 @@ import com.marklogic.client.io.DocumentMetadataHandle;
 import com.marklogic.client.io.JacksonHandle;
 import com.marklogic.client.io.StringHandle;
 
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 public class IOTestUtil {
     public final static String TEST_DIR = "data";
@@ -43,14 +47,42 @@ public class IOTestUtil {
 
     public final static ObjectMapper mapper = new ObjectMapper();
 
-    public IOTestUtil(String hostip) {
-        Common common = new Common(hostip);
-        db         = common.newServerAdminClient();
-        modDb      = common.newEvalClient("java-unittest-modules");
-        scriptMeta = initDocumentMetadata(true);
-        docMeta    = initDocumentMetadata(false);
-        modMgr     = modDb.newTextDocumentManager();
-        this.db1         = common.newServerAdminClient();
+    public IOTestUtil(String hostip, int port, String username, String password, String moduleDatabase) {
+        try {
+            Common common = new Common(hostip);
+
+
+            X509TrustManager trustManager = new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                }
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                }
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+            };
+            SSLContext sslContext = null;
+            try{
+                sslContext= SSLContext.getInstance("TLSv1.2");
+                sslContext.init(null, new TrustManager[]{trustManager}, null);
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+            db = DatabaseClientFactory.newClient(hostip, port,  new DatabaseClientFactory.BasicAuthContext(username, password).withSSLHostnameVerifier(DatabaseClientFactory.SSLHostnameVerifier.ANY).withSSLContext(sslContext, trustManager),
+                    DatabaseClient.ConnectionType.GATEWAY);
+            modDb = DatabaseClientFactory.newClient(hostip, port, moduleDatabase, new DatabaseClientFactory.BasicAuthContext(username, password).withSSLHostnameVerifier(DatabaseClientFactory.SSLHostnameVerifier.ANY).withSSLContext(sslContext, trustManager),
+                    DatabaseClient.ConnectionType.GATEWAY);
+            scriptMeta = initDocumentMetadata(true);
+            docMeta = initDocumentMetadata(false);
+            modMgr = modDb.newTextDocumentManager();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Exception occurred while creating DatabaseClient "+ex.getMessage());
+        }
     }
     public DatabaseClient getDb1() {
 

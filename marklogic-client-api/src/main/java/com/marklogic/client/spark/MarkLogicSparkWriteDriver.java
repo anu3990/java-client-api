@@ -37,18 +37,20 @@ public class MarkLogicSparkWriteDriver {
                 .format("json")
                 .json("/Users/asinha/intellij/july-8/java-client-api/marklogic-client-api/src/main/java/com/marklogic/client/spark/data/test.json");
                 //.csv("/Users/asinha/intellij/july-8/java-client-api/marklogic-client-api/src/main/java/com/marklogic/client/spark/data/data.csv");
-        ml.mlSparkDriver(dataset1, "localhost");
+        ml.mlSparkDriver(dataset1, "hostname", 8010, "username", "password", "/demo", "data-hub-MODULES");
     }
 
-    public void mlSparkDriver(Dataset dataset, String ip) {
+    public void mlSparkDriver(Dataset dataset, String host, int port, String username, String password, String prefix, String moduleDatabase) {
 
         System.out.println("************ Starting MarkLogicSparkWriteDriver **************** "+dataset.schema());
         try {
             DataFrameWriter writer = dataset.write().format(MarkLogicWriteDataSource.class.getName())
-                    .option("host", String.valueOf(ip))
-                    .option("port", 8012)
-                    .option("user", "admin")
-                    .option("password","admin")
+                    .option("host", host)
+                    .option("port", port)
+                    .option("user", username)
+                    .option("password",password)
+                    .option("prefixvalue", prefix)
+                    .option("moduledatabase", moduleDatabase)
                     .option("batchsize", 10);
 
             writer.save();

@@ -15,7 +15,7 @@ const inputs =
 inputs.forEach(record => {
 state.next = state.next + 1;
 xdmp.documentInsert(
-    '/example/cookbook/bulkExport/'+(work.taskId)+'/'+(state.next)+'.json',
+    (state.prefix)+'/'+(work.taskId)+'/'+(state.next)+'.json',
     record,
     {permissions:[
             xdmp.permission('rest-reader', 'read'),
