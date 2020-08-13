@@ -62,7 +62,7 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
             apiObj = ioTestUtil.readApi(apiName);
             scriptPath = ioTestUtil.getScriptPath(apiObj);
             apiPath = ioTestUtil.getApiPath(scriptPath);
-            ioTestUtil.load(apiName, apiObj, scriptPath, apiPath);
+           // ioTestUtil.load(apiName, apiObj, scriptPath, apiPath);
             String endpointState = "{\"next\":" + 0 + ", \"prefix\":\""+map.get("prefixvalue")+"\"}";
             InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, new JacksonHandle(apiObj));
             this.loader = loadEndpt.bulkCaller();
