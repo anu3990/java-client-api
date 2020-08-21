@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.marklogic.client.dataservices.InputEndpoint;
-import com.marklogic.client.io.JacksonHandle;
+import com.marklogic.client.io.StringHandle;
 import com.marklogic.client.spark.IOTestUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.json.JSONOptions;
@@ -56,15 +56,10 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
             this.records = new ArrayList<>();
             this.taskId = Integer.valueOf(map.get("taskId"));
             this.schema = schema;
-            String apiName = "bulkInputCallerImpl.api";
             IOTestUtil ioTestUtil = new IOTestUtil(map.get("host"), Integer.valueOf(map.get("port")), map.get("user"),
                     map.get("password"), map.get("moduledatabase"));
-            apiObj = ioTestUtil.readApi(apiName);
-            scriptPath = ioTestUtil.getScriptPath(apiObj);
-            apiPath = ioTestUtil.getApiPath(scriptPath);
-           // ioTestUtil.load(apiName, apiObj, scriptPath, apiPath);
             String endpointState = "{\"next\":" + 0 + ", \"prefix\":\""+map.get("prefixvalue")+"\"}";
-            InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, new JacksonHandle(apiObj));
+            InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, IOTestUtil.modDb.newTextDocumentManager().read("/data-hub/5/data-services/ingestion/bulkIngester.api", new StringHandle()));
             this.loader = loadEndpt.bulkCaller();
             String workUnit = "{\"taskId\":" + taskId + "}";
             loader.setWorkUnit(new ByteArrayInputStream(workUnit.getBytes()));
