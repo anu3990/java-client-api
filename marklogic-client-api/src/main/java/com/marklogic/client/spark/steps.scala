@@ -37,6 +37,6 @@
                     .option("prefixvalue", prefix)
                     .option("moduledatabase", moduledb)
                     .option("batchsize", 10)
-                    .option("apiPath", apiPath);
+                    .option("apipath", apiPath);
 
     val t2 =  writer.save;
