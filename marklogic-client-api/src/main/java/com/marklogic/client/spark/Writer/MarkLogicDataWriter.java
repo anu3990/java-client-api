@@ -37,9 +37,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class MarkLogicDataWriter implements DataWriter<InternalRow> {
-    String scriptPath;
-    String apiPath;
-    ObjectNode apiObj;
+
     private Map<String, String> map;
     private List<String> records;
     InputEndpoint.BulkInputCaller loader;
@@ -59,7 +57,7 @@ public class MarkLogicDataWriter implements DataWriter<InternalRow> {
             IOTestUtil ioTestUtil = new IOTestUtil(map.get("host"), Integer.valueOf(map.get("port")), map.get("user"),
                     map.get("password"), map.get("moduledatabase"));
             String endpointState = "{\"next\":" + 0 + ", \"prefix\":\""+map.get("prefixvalue")+"\"}";
-            InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, IOTestUtil.modDb.newTextDocumentManager().read("/data-hub/5/data-services/ingestion/bulkIngester.api", new StringHandle()));
+            InputEndpoint loadEndpt = InputEndpoint.on(IOTestUtil.db, IOTestUtil.modDb.newTextDocumentManager().read(map.get("apipath"), new StringHandle()));
             this.loader = loadEndpt.bulkCaller();
             String workUnit = "{\"taskId\":" + taskId + "}";
             loader.setWorkUnit(new ByteArrayInputStream(workUnit.getBytes()));
