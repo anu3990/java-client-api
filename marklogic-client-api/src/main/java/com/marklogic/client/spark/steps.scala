@@ -3,6 +3,7 @@
     val secretName = "secretName";
     val region = "region";
     val apiPath = "apiPath";
+    val prefix = "/demo"
    
     val getSecretValueRequest = new GetSecretValueRequest()
                     .withSecretId(secretName);
@@ -25,7 +26,7 @@
     val port = mapValue("port")
     val username = mapValue("username")
     val password = mapValue("password")
-    val prefix = "/demo"
+    
     val moduledb = mapValue("modulesdb")
     
     val writer = dataframe.write.format("com.marklogic.client.spark.Writer.MarkLogicWriteDataSource")
