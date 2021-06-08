@@ -19,16 +19,19 @@ import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.WriteSupport;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class MarkLogicWriteDataSource implements WriteSupport {
+
     @Override
     public Optional<DataSourceWriter> createWriter(String writeUUID, StructType schema, SaveMode mode, DataSourceOptions options) {
-        System.out.println("************ Reached MLDataSource ****************");
+        System.out.println("************ Reached MLDataSource with schema **************** "+schema);
         Map<String, String> map = options.asMap();
-        return Optional.of(new MarkLogicWriter(map));
+        return Optional.of(new MarkLogicWriter(map, schema));
     }
 }

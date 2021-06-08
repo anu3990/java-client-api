@@ -75,7 +75,7 @@ jar {
 }
 
 shadowJar {
-    baseName = 'shadow'
+    baseName = 'java-client-api-shadow'
     classifier = ''
     exclude (
             'search.xsd', 'search-bindings.xjb', 'query-options-template.xml',

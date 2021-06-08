@@ -19,9 +19,7 @@ import com.marklogic.client.document.JSONDocumentManager;
 import com.marklogic.client.spark.Writer.MarkLogicWriteDataSource;
 import org.apache.spark.sql.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.*;
 
 public class MarkLogicSparkWriteDriver {
 
@@ -30,31 +28,31 @@ public class MarkLogicSparkWriteDriver {
     static Long recordCount;
     public List<Long> taskIds;
 
-    public void mlSparkDriver(String csvPath, String ip) {
-        // taskIds = new ArrayList<>();
-
+    public static void main(String[] args) {
         SparkSession sparkSession = SparkSession.builder()
+                .master("local")
                 .getOrCreate();
+        MarkLogicSparkWriteDriver ml = new MarkLogicSparkWriteDriver();
+        Dataset dataset1 = sparkSession.read()
+                .format("json")
+                .json("/Users/asinha/intellij/july-8/java-client-api/marklogic-client-api/src/main/java/com/marklogic/client/spark/data/test.json");
+                //.csv("/Users/asinha/intellij/july-8/java-client-api/marklogic-client-api/src/main/java/com/marklogic/client/spark/data/data.csv");
+        ml.mlSparkDriver(dataset1, "hostname", 8010, "username", "password", "/demo", "data-hub-MODULES");
+    }
 
-        Dataset<Row> dataset = sparkSession.read().option("header", true)
-                .format("csv")
-                .csv(String.valueOf(csvPath)); // Absolute path to data.csv
-        StringBuffer headers = new StringBuffer();
-        for(int i=0; i<dataset.schema().fields().length; i++) {
-            headers.append(dataset.schema().fields()[i].name());
-            headers.append(",");
-        }
-        System.out.println("************ Starting MarkLogicSparkWriteDriver **************** ");
-        System.out.println("************ CSV path **************** "+ csvPath);
-        System.out.println("************ IP **************** "+ ip);
+    public void mlSparkDriver(Dataset dataset, String host, int port, String username, String password, String prefix, String moduleDatabase) {
+
+        System.out.println("************ Starting MarkLogicSparkWriteDriver **************** "+dataset.schema());
         try {
             DataFrameWriter writer = dataset.write().format(MarkLogicWriteDataSource.class.getName())
-                    .option("host", String.valueOf(ip))
-                    .option("port", 8012)
-                    .option("user", "admin")
-                    .option("password","admin")
-                    .option("batchsize", 10)
-                    .option("schema", headers.toString());
+                    .option("host", host)
+                    .option("port", port)
+                    .option("user", username)
+                    .option("password",password)
+                    .option("prefixvalue", prefix)
+                    .option("moduledatabase", moduleDatabase)
+                    .option("batchsize", 10);
+
             writer.save();
 
         } catch(Exception e) {

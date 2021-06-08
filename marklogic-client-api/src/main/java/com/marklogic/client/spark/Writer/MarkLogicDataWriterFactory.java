@@ -15,18 +15,20 @@
  */
 package com.marklogic.client.spark.Writer;
 
-import com.marklogic.client.spark.MarkLogicSparkWriteDriver;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.v2.writer.DataWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriterFactory;
+import org.apache.spark.sql.types.StructType;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class MarkLogicDataWriterFactory implements DataWriterFactory<InternalRow> {
     private Map<String, String> map;
-    public MarkLogicDataWriterFactory(Map<String, String> map) {
+    private StructType schema;
+    public MarkLogicDataWriterFactory(Map<String, String> map, StructType schema) {
         this.map = map;
+        this.schema = schema;
     }
 
     @Override
@@ -38,6 +40,6 @@ public class MarkLogicDataWriterFactory implements DataWriterFactory<InternalRow
         mapConfig.put("taskId",String.valueOf(taskId));
        // MarkLogicSparkWriteDriver.taskIds.add(taskId);
 
-        return new MarkLogicDataWriter(mapConfig);
+        return new MarkLogicDataWriter(mapConfig, this.schema);
     }
 }
