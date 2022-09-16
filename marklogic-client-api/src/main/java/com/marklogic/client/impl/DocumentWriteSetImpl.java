@@ -22,9 +22,7 @@ import com.marklogic.client.document.DocumentWriteOperation;
 import com.marklogic.client.document.DocumentWriteOperation.OperationType;
 import com.marklogic.client.io.Format;
 import com.marklogic.client.io.StringHandle;
-import com.marklogic.client.io.marker.AbstractWriteHandle;
-import com.marklogic.client.io.marker.ContentHandle;
-import com.marklogic.client.io.marker.DocumentMetadataWriteHandle;
+import com.marklogic.client.io.marker.*;
 
 import java.util.*;
 
@@ -211,6 +209,22 @@ public class DocumentWriteSetImpl implements Set<DocumentWriteOperation>,Documen
   @Override
   public void clear() {
     operations.clear();
+  }
+
+  JSONWriteHandle getRowsHandle(){
+    return null;
+  }
+
+  RESTServices.SingleNodeCallField getRowsField(String paramName) {
+    return new com.marklogic.client.impl.RESTServices.SingleNodeCallField(paramName, (BufferableHandle) getRowsHandle());
+  }
+
+  AbstractWriteHandle[] getDocHandles(){
+    return null;
+  }
+
+  RESTServices.BufferedMultipleNodeCallField getDocField(String paramName) {
+    return new com.marklogic.client.impl.RESTServices.BufferedMultipleNodeCallField(paramName, (BufferableHandle[]) getDocHandles());
   }
 
 }

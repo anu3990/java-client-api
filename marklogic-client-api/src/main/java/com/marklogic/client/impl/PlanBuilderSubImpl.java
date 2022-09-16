@@ -18,10 +18,13 @@ package com.marklogic.client.impl;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.marklogic.client.document.DocumentWriteSet;
 import com.marklogic.client.expression.PlanBuilder;
 import com.marklogic.client.expression.SemExpr;
+import com.marklogic.client.io.StringHandle;
 import com.marklogic.client.io.marker.ContentHandle;
 import com.marklogic.client.io.marker.JSONReadHandle;
 import com.marklogic.client.type.*;
@@ -635,6 +638,7 @@ public class PlanBuilderSubImpl extends PlanBuilderImpl {
     private Object[]                         fnArgs   = null;
 
     private Map<PlanParamBase,BaseTypeImpl.ParamBinder> params = null;
+    private Map<PlanParamBase,?> nextParams = null;
 
     PlanSubImpl(PlanBuilderBaseImpl.PlanBaseImpl prior, String fnPrefix, String fnName, Object[] fnArgs) {
       super(prior, fnPrefix, fnName, fnArgs);
@@ -644,10 +648,13 @@ public class PlanBuilderSubImpl extends PlanBuilderImpl {
       this.fnArgs   = fnArgs;
     }
     private PlanSubImpl(
-      PlanBuilderBaseImpl.PlanBaseImpl prior, String fnPrefix, String fnName, Object[] fnArgs,
-      Map<PlanParamBase,BaseTypeImpl.ParamBinder> params) {
+            PlanBuilderBaseImpl.PlanBaseImpl prior, String fnPrefix, String fnName, Object[] fnArgs,
+            Map<PlanParamBase,BaseTypeImpl.ParamBinder> params, Map<PlanParamBase,?> nextParams) {
       this(prior, fnPrefix, fnName, fnArgs);
-      this.params = params;
+      if(params != null)
+        this.params = params;
+      if(nextParams!=null)
+        this.nextParams = nextParams;
     }
 
     @Override
@@ -740,7 +747,33 @@ public class PlanBuilderSubImpl extends PlanBuilderImpl {
         throw new IllegalArgumentException("cannot set value with unknown implementation");
       }
 
-      return new PlanSubImpl(this.prior, this.fnPrefix, this.fnName, this.fnArgs, nextParams);
+      return new PlanSubImpl(this.prior, this.fnPrefix, this.fnName, this.fnArgs, nextParams, null);
+    }
+
+    @Override
+    public Plan bindParam(String paramName, DocumentWriteSet rows) {
+      return bindParam(new PlanParamBase(paramName), rows);
+    }
+
+    @Override
+    public Plan bindParam(PlanParamExpr param, DocumentWriteSet rows) {
+      Map<PlanParamBase,?> nextParams = new HashMap<>();
+      return new PlanSubImpl(this.prior, this.fnPrefix, this.fnName, this.fnArgs, null, nextParams);
+    }
+
+    @Override
+    public PlanColType colType(String column, String type, boolean nullable) {
+      return null;
+    }
+
+    @Override
+    public PlanColType colType(PlanColumn column, String type, boolean nullable) {
+      return null;
+    }
+
+    @Override
+    public Set<PlanColType> docColTypes() {
+      return null;
     }
 
   }
@@ -774,6 +807,9 @@ public class PlanBuilderSubImpl extends PlanBuilderImpl {
       export((JSONReadHandle) handle);
 
       return handle.get();
+    }
+    RESTServices.SingleNodeCallField getQueryField() {
+      return new com.marklogic.client.impl.RESTServices.SingleNodeCallField("query", export(new StringHandle()));
     }
 
   }

@@ -16,7 +16,9 @@
 package com.marklogic.client.expression;
 
 import java.util.Map;
+import java.util.Set;
 
+import com.marklogic.client.document.DocumentWriteSet;
 import com.marklogic.client.io.marker.JSONReadHandle;
 
 import com.marklogic.client.type.*;
@@ -552,6 +554,14 @@ public interface PlanBuilderBase {
          * @return  a new instance of the Plan object with the parameter binding
          */
         PlanBuilder.Plan bindParam(PlanParamExpr param, String  literal);
+
+        PlanBuilder.Plan bindParam(String paramName, DocumentWriteSet docs);
+        PlanBuilder.Plan bindParam(PlanParamExpr param, DocumentWriteSet docs);
+
+        PlanColType colType(String column, String type, boolean nullable);
+        PlanColType colType(PlanColumn column, String type, boolean nullable);
+
+        Set<PlanColType> docColTypes();
     }
     /**
      * Defines base methods for AccessPlan. This interface is an implementation detail.
