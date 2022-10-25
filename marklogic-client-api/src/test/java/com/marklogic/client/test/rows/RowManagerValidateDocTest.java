@@ -15,91 +15,84 @@
  */
 package com.marklogic.client.test.rows;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.marklogic.client.datamovement.DataMovementManager;
 import com.marklogic.client.datamovement.WriteBatcher;
 import com.marklogic.client.document.DocumentManager;
+import com.marklogic.client.document.XMLDocumentManager;
 import com.marklogic.client.expression.PlanBuilder;
-import com.marklogic.client.impl.DocumentWriteOperationImpl;
 import com.marklogic.client.io.DocumentMetadataHandle;
 import com.marklogic.client.io.JacksonHandle;
 import com.marklogic.client.io.StringHandle;
-import com.marklogic.client.query.DeleteQueryDefinition;
-import com.marklogic.client.query.QueryManager;
-import com.marklogic.client.row.RowManager;
 import com.marklogic.client.row.RowRecord;
 import com.marklogic.client.test.Common;
-import org.junit.After;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import static com.marklogic.client.io.Format.JSON;
 import static com.marklogic.client.io.Format.XML;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-public class RowManagerValidateDocTest {
-    private final static String DIRECTORY = "/validateDocTest/";
-    private static Set<String> set = new HashSet<>();
-    protected ObjectMapper mapper = new ObjectMapper();
-    String validateDocCollection = "RowManagerValidateDocTest";
-    static DataMovementManager dataMovementManager;
-    static RowManager rowManager;
-    static PlanBuilder op;
+public class RowManagerValidateDocTest extends AbstractOpticUpdateTest {
 
-    @BeforeClass
-    public static void setUp(){
-        Common.connect();
+    private Set<String> expectedUris = new HashSet<>();
+    private DataMovementManager dataMovementManager;
+
+    @Before
+    public void moreSetup(){
         dataMovementManager = Common.client.newDataMovementManager();
-        rowManager = Common.client.newRowManager();
-        op = rowManager.newPlanBuilder();
     }
 
-
     @Test
-    public void validateDocWithxmlSchema() {
+    public void xmlSchema() {
         WriteBatcher writeBatcher = dataMovementManager.newWriteBatcher();
-        DocumentMetadataHandle meta = new DocumentMetadataHandle().withCollections(validateDocCollection);
+        DocumentMetadataHandle meta = newDefaultMetadata();
         dataMovementManager.startJob(writeBatcher);
-        for(int i=0; i<100; i++){
-            writeBatcher.addAs(DIRECTORY+i, meta, new StringHandle("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    "<Doc><key>"+i+"</key><Value>value"+i+"</Value></Doc>").withFormat(XML));
-            set.add(DIRECTORY+i);
+        final int uriCountToWrite = 10;
+        for (int i = 0; i < uriCountToWrite; i++) {
+            String uri = "/acme/" + i + ".xml";
+            writeBatcher.addAs(uri, meta, new StringHandle("<Doc><key>" + i + "</key><Value>value" + i + "</Value></Doc>").withFormat(XML));
+            expectedUris.add(uri);
         }
         writeBatcher.flushAndWait();
         dataMovementManager.stopJob(writeBatcher);
-        PlanBuilder.Plan plan = op
-                .fromDocUris(op.cts.directoryQuery(DIRECTORY))
-                .joinDoc(op.col("doc"),op.col("uri"))
-                .validateDoc(op.col("doc"),
-                        op.validateDocSchemaDefinition()
-                                .withKind("xmlSchema")
-                        .withMode("lax"),
-                        op.validateDocErrorDispositionDef().withLogSize(100).withLogLevel("summary"));
 
-        Iterator<RowRecord> rows = rowManager.resultRows(plan).iterator();
-        while (rows.hasNext()){
-            String uri = rows.next().getString("uri");
-            if(uri!=null){
-                // TODO: currently the plan returns duplicates, so once removed from the set, the assert fails.
-                //assertTrue(set.contains(uri));
-                set.remove(uri);
-            }
-        }
-       // TODO: uncomment the below after https://bugtrack.marklogic.com/57987 is fixed
-        //assertTrue(set.size() == 0);
+        PlanBuilder.Plan plan = op
+            .fromDocUris(op.cts.directoryQuery("/acme/"))
+            .joinDoc(op.col("doc"), op.col("uri"))
+            .validateDoc(op.col("doc"),
+                op.validateDocSchemaDefinition().withKind("xmlSchema").withMode("lax"),
+                op.validateDocErrorDispositionDef().withLogSize(100).withLogLevel("summary")
+            );
+
+        List<RowRecord> rows = resultRows(plan);
+        assertEquals(uriCountToWrite, rows.size());
+
+        XMLDocumentManager mgr = Common.client.newXMLDocumentManager();
+        expectedUris.forEach(uri -> assertNotNull("URI was not written: " + uri, mgr.exists(uri)));
+
+        // The following fails because of a bug in resultRows
+//        List<String> persistedUris = rows.stream().map(row -> {
+//            String uri = row.getString("uri");
+//            if (StringUtils.isEmpty(uri)) {
+//                fail("URI returned by resultRows is null: " + row);
+//            }
+//            return uri;
+//        }).collect(Collectors.toList());
+//
+//        assertEquals(count, persistedUris.size());
+//        expectedUris.forEach(uri -> assertTrue("Did not find URI: " + uri, persistedUris.contains(uri)));
     }
 
     @Test
-    public void validateDocWithFromDocDescriptor() {
-        set.clear();
+    public void jsonSchema() {
         WriteBatcher writeBatcher = dataMovementManager.newWriteBatcher();
-        writeBatcher.addAs("/schema/jsonValidation.json", new StringHandle("{\n" +
+        writeBatcher.addAs("/acme/jsonValidation.json", newDefaultMetadata(), new StringHandle("{\n" +
                 "       \"schema\": \"https://json-schema.org/draft/2020-12/schema\",\n" +
                 "      \"id\": \"https://example.com/product.schema.json\",\n" +
                 "       \"title\": \"Product\",\n" +
@@ -112,20 +105,17 @@ public class RowManagerValidateDocTest {
                 "        }\n" +
                 "     }").withFormat(JSON));
         writeBatcher.flushAndWait();
-        DocumentMetadataHandle metadata = new DocumentMetadataHandle().withCollections(validateDocCollection);;
-        ObjectNode doc1 = mapper.createObjectNode().put("count", 1).put("total",2);
-        ObjectNode doc2 = mapper.createObjectNode().put("count", 2).put("total",3);
 
-        PlanBuilder.ModifyPlan plan = op.fromDocDescriptors(
-                op.docDescriptor(
-                        new DocumentWriteOperationImpl("/validateDoc/doc1.json", metadata, new JacksonHandle(doc1))),
-                op.docDescriptor(
-                        new DocumentWriteOperationImpl("/validateDoc/doc2.json", metadata, new JacksonHandle(doc2))))
-                .validateDoc(op.col("doc"),
-                        op.validateDocSchemaDefinition()
-                                .withKind("jsonSchema")
-                                .withSchemaUri("/schema/jsonValidation.json"),
-                        op.validateDocErrorDispositionDef().withLogSize(100).withLogLevel("summary"));
+        PlanBuilder.ModifyPlan plan = op
+            .fromDocDescriptors(
+                op.docDescriptor(newWriteOp("/acme/doc1.json", mapper.createObjectNode().put("count", 1).put("total",2))),
+                op.docDescriptor(newWriteOp("/acme/doc2.json", mapper.createObjectNode().put("count", 2).put("total",3)))
+            )
+            .validateDoc(op.col("doc"),
+                op.validateDocSchemaDefinition().withKind("jsonSchema").withSchemaUri("/acme/jsonValidation.json"),
+                op.validateDocErrorDispositionDef().withLogSize(100).withLogLevel("summary")
+            );
+
         //verifyExportedPlanReturnsSameRowCount(plan);
         Iterator<RowRecord> rows = rowManager.resultRows(plan).iterator();
         while (rows.hasNext()){
@@ -133,25 +123,24 @@ public class RowManagerValidateDocTest {
             String uri = str.getString("uri");
             if(uri!=null){
                 System.out.println(str.getString("doc"));
-                set.add(uri);
+                expectedUris.add(uri);
             }
         }
         rowManager.execute(plan.write());
         DocumentManager docMgr = Common.client.newDocumentManager();
-        assertTrue(docMgr.exists("/validateDoc/doc1.json")!=null);
-        assertTrue(docMgr.exists("/validateDoc/doc2.json")!=null);
+        assertTrue(docMgr.exists("/acme/doc1.json")!=null);
+        assertTrue(docMgr.exists("/acme/doc2.json")!=null);
 
         // TODO: uncomment the below after https://bugtrack.marklogic.com/57987 is fixed
         //assertTrue(set.size()==2);
-        //assertTrue(set.contains("/validateDoc/doc1.json"));
-        //assertTrue(set.contains("/validateDoc/doc2.json"));
+        //assertTrue(set.contains("/acme/doc1.json"));
+        //assertTrue(set.contains("/acme/doc2.json"));
     }
 
     @Test
-    public void validateDocWithSchematron() {
-        set.clear();
+    public void schematron() {
         WriteBatcher writeBatcher = dataMovementManager.newWriteBatcher();
-        writeBatcher.addAs("/schematron.sch", new StringHandle("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        writeBatcher.addAs("/acme/schematron.sch", newDefaultMetadata(), new StringHandle("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<sch:schema xmlns:sch=\"http://purl.oclc.org/dsdl/schematron\">\n" +
                 "  <sch:phase id=\"p1\">\n" +
                 "    <sch:active pattern=\"pt1\"/>\n" +
@@ -172,41 +161,32 @@ public class RowManagerValidateDocTest {
 
         // Build the rows to bind to the plan
         ArrayNode array = mapper.createArrayNode();
-        array.addObject().put("desc", "plug").put("uri", "/validateDoc/doc2.xml");
-        array.addObject().put("desc", "adaptor").put("uri", "/validateDoc/doc1.xml");
-        array.addObject().put("desc", "plug").put("uri", "/validateDoc/doc3.xml");
-        array.addObject().put("desc", "plug").put("uri", "/validateDoc/doc4.xml");
-        array.addObject().put("desc", "adaptor").put("uri", "/validateDoc/doc5.xml");
-        PlanBuilder.Plan plan = op.fromParam("bindingParam", "", op.colTypes(
+        array.addObject().put("desc", "plug").put("uri", "/acme/doc2.xml");
+        array.addObject().put("desc", "adaptor").put("uri", "/acme/doc1.xml");
+        array.addObject().put("desc", "plug").put("uri", "/acme/doc3.xml");
+        array.addObject().put("desc", "plug").put("uri", "/acme/doc4.xml");
+        array.addObject().put("desc", "adaptor").put("uri", "/acme/doc5.xml");
+
+        PlanBuilder.Plan plan = op
+            .fromParam("bindingParam", "", op.colTypes(
                 op.colType("uri", "string"),
                 op.colType("desc", "string")
-        ))
-                .validateDoc(op.col("desc"),
-                        op.validateDocSchemaDefinition()
-                                .withKind("schematron")
-                                .withSchemaUri("/schematron.sch"),
-                        op.validateDocErrorDispositionDef().withLogSize(100).withLogLevel("summary"));;
+            ))
+            .validateDoc(op.col("desc"),
+                op.validateDocSchemaDefinition().withKind("schematron").withSchemaUri("/schematron.sch"),
+                op.validateDocErrorDispositionDef().withLogSize(100).withLogLevel("summary")
+            );
 
-        plan = plan.bindParam("bindingParam", new JacksonHandle(array), null);
+        plan = plan.bindParam("bindingParam", new JacksonHandle(array));
 
         Iterator<RowRecord> rows = rowManager.resultRows(plan).iterator();
         while (rows.hasNext()){
             RowRecord rowRecord = rows.next();
             if(rowRecord.getString("uri") != null)
-                set.add(rowRecord.getString("uri"));
+                expectedUris.add(rowRecord.getString("uri"));
         }
         // TODO: uncomment the below after https://bugtrack.marklogic.com/57987 is fixed
         // assertTrue(set.size() == 5);
 
-    }
-
-    @After
-    public void cleanup(){
-        DocumentManager docMgr = Common.client.newDocumentManager();
-        docMgr.delete("/schema/jsonValidation.json", "/schematron.sch");
-        QueryManager queryMgr = Common.client.newQueryManager();
-        DeleteQueryDefinition deleteQuery = queryMgr.newDeleteDefinition();
-        deleteQuery.setCollections(validateDocCollection);
-        queryMgr.delete(deleteQuery);
     }
 }
