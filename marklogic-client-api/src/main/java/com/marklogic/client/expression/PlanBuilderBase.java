@@ -465,6 +465,19 @@ public interface PlanBuilderBase {
     TransformDefinition transformDefinition(String path);
 
     /**
+     * Build a schema definition for use with {@code validateDoc}.
+     *
+     * @return a new {@code ValidateDocSchemaDefinition}
+     */
+    ValidateDocSchemaDefinition validateDocSchemaDefinition();
+    /**
+     * Build a error definition for use with {@code validateDoc}.
+     *
+     * @return a new {@code ValidateDocErrorDispositionDef}
+     */
+    ValidateDocErrorDispositionDef validateDocErrorDispositionDef();
+
+    /**
      * Defines base methods for Plan. This interface is an implementation detail.
      * Use Plan as the type for instances of Plan.
      */
